@@ -138,21 +138,41 @@ function createInputText(item: TextInput) {
   `;
 }
 
-function createButtons(type: string, name: string, values: {label: string, value: number}[]) {
+function createRadioButtons(type: string, name: string, values: {label: string, value: number}[]) {
   return values.map(value => `
-    <input type="${escapeHTML(type)}" id="${value.value}" name="${escapeHTML(name)}">
-    <label for="${value.value}">${escapeHTML(value.label)}</label>
+    <input type="${escapeHTML(type)}" id="${escapeHTML(name)}${value.value}" name="${escapeHTML(name)}">
+    <label for="${escapeHTML(name)}${value.value}">${escapeHTML(value.label)}</label>
   `).join();
 }
 
-function createInputButton(item: Radio | Checkbox) {
+function createCheckboxButtons(type: string, name: string, values: {label: string, value: number}[]) {
+  return values.map(value => `
+    <input type="${escapeHTML(type)}" id="${escapeHTML(name)}${value.value}" name="${escapeHTML(name)}${value.value}">
+    <label for="${escapeHTML(name)}${value.value}">${escapeHTML(value.label)}</label>
+  `).join();
+}
+
+function createInputRadio(item: Radio) {
   return `
     <tr>
       <th>
         ${escapeHTML(item.label)}
       </th>
       <td>
-        ${createButtons(item.type, item.name, item.values)}
+        ${createRadioButtons(item.type, item.name, item.values)}
+      </td>
+    </tr>
+  `;
+}
+
+function createInputCheckbox(item: Checkbox) {
+  return `
+    <tr>
+      <th>
+        ${escapeHTML(item.label)}
+      </th>
+      <td>
+        ${createCheckboxButtons(item.type, item.name, item.values)}
       </td>
     </tr>
   `;
@@ -160,8 +180,10 @@ function createInputButton(item: Radio | Checkbox) {
 
 function createInputRow(item: InputTag) {
   switch(item.type) {
-    case "checkbox": case "radio":
-      return createInputButton(item);
+    case "checkbox":
+      return createInputCheckbox(item);
+    case "radio":
+      return createInputRadio(item);
     case "email": case "text": case "text":
       return createInputText(item);
     default:
