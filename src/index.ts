@@ -1,11 +1,47 @@
-type Item = {
+type Item = InputTag | SelectTag | TextareaTag;
+type Option = {
+  text: string,
+  value: number
+};
+
+type InputTag = TextInput | Radio | Checkbox;
+
+type TextInput = {
   name: string;
-  tagName: string;
-  type?: string;
   label: string;
+  tagName: "input";
+  type: "text" | "email" | "tel";
   placeholder?: string;
-  values?: { label: string; value: number }[];
-  options?: { text: string; value: number }[];
+}
+
+type Radio = {
+  name: string;
+  label: string;
+  tagName: "input";
+  type: "radio";
+  values: { label: string; value: number }[];
+};
+
+type Checkbox = {
+  name: string;
+  label: string;
+  tagName: "input";
+  type: "checkbox";
+  values: { label: string; value: number }[];
+};
+
+type SelectTag = {
+  name: string;
+  label: string;
+  tagName: "select";
+  options: { text: string; value: number }[];
+};
+
+type TextareaTag = {
+  name: string;
+  label: string;
+  tagName: "textarea";
+  placeholder?: string;
 };
 
 const items: Item[] = [
@@ -80,38 +116,109 @@ const items: Item[] = [
 // _____________________________________________________________________________
 //
 
-function createInputRow(item: Item) {
+function escapeHTML(raw: string) {
+  return raw.replace(`'`, '&#x27;')
+    .replace(`"`, '&quot;')
+    .replace('`', '&#x60;')
+    .replace('<', '&lt;')
+    .replace('>', '&gt;')
+    .replace('&', '&amp;');
+}
+
+function createInputText(item: TextInput) {
   return `
     <tr>
       <th>
+        ${escapeHTML(item.label)}
       </th>
       <td>
-        <input />
+        <input type="${escapeHTML(item.type)}" placeholder="${escapeHTML(item.placeholder ?? "")}" name="${escapeHTML(item.name)}" />
       </td>
     </tr>
   `;
 }
 
-function createSelectRow(item: Item) {
+function createRadioButtons(type: string, name: string, values: {label: string, value: number}[]) {
+  return values.map(value => `
+    <input type="${escapeHTML(type)}" id="${escapeHTML(name)}${value.value}" name="${escapeHTML(name)}">
+    <label for="${escapeHTML(name)}${value.value}">${escapeHTML(value.label)}</label>
+  `).join();
+}
+
+function createCheckboxButtons(type: string, name: string, values: {label: string, value: number}[]) {
+  return values.map(value => `
+    <input type="${escapeHTML(type)}" id="${escapeHTML(name)}${value.value}" name="${escapeHTML(name)}${value.value}">
+    <label for="${escapeHTML(name)}${value.value}">${escapeHTML(value.label)}</label>
+  `).join();
+}
+
+function createInputRadio(item: Radio) {
   return `
     <tr>
       <th>
+        ${escapeHTML(item.label)}
       </th>
       <td>
-        <select>
+        ${createRadioButtons(item.type, item.name, item.values)}
+      </td>
+    </tr>
+  `;
+}
+
+function createInputCheckbox(item: Checkbox) {
+  return `
+    <tr>
+      <th>
+        ${escapeHTML(item.label)}
+      </th>
+      <td>
+        ${createCheckboxButtons(item.type, item.name, item.values)}
+      </td>
+    </tr>
+  `;
+}
+
+function createInputRow(item: InputTag) {
+  switch(item.type) {
+    case "checkbox":
+      return createInputCheckbox(item);
+    case "radio":
+      return createInputRadio(item);
+    case "email": case "text": case "text":
+      return createInputText(item);
+    default:
+      // ts-expect-error
+      console.log(item);
+  }
+}
+
+function createOptions(options: Option[]) {
+  return options.map(option => `<option value=${option.value}>${escapeHTML(option.text)}</option>`).join();
+}
+
+function createSelectRow(item: SelectTag) {
+  return `
+    <tr>
+      <th>
+        ${escapeHTML(item.label)}
+      </th>
+      <td>
+        <select name=${escapeHTML(item.name)}>
+          ${createOptions(item.options)}
         </select>
       </td>
     </tr>
   `;
 }
 
-function createTextAreaRow(item: Item) {
+function createTextAreaRow(item: TextareaTag) {
   return `
     <tr>
       <th>
+        ${escapeHTML(item.label)}
       </th>
       <td>
-        <textarea></textarea>
+        <textarea name=${escapeHTML(item.name)}>${escapeHTML(item.placeholder ?? "")}</textarea>
       </td>
     </tr>
   `;
@@ -134,7 +241,7 @@ function createTable() {
 }
 
 function createFormDom() {
-  const form = document.getElementById("form");
+  const form = document.getElementById("form") as HTMLElement;
   form.innerHTML = createTable();
 }
 
